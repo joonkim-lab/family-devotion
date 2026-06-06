@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>우리집 묵상</title>
+<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"/>
+<style>
+:root {
+  /* 따뜻한 아침 톤 — 기존 앱(청록)과 완전히 구분 */
+  --bg: #fdf6ec;            /* 아이보리 */
+  --bg2: #faf0e0;
+  --surface: #fffdfa;
+  --surface2: #fdf4e8;
+  --line: rgba(120,80,40,0.10);
+  --text: #3a2e23;          /* 진한 갈색 */
+  --text2: #6b5a48;
+  --text3: #a8967f;
+  --accent: #e07a5f;        /* 코랄 */
+  --accent2: #c75b42;
+  --accent-bg: #fce8e1;
+  --amber: #e8a33d;         /* 앰버 */
+  --amber-bg: #fbeecd;
+  --green: #7a9e7e;
+  --tab-h: 60px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* 가족 개인별 색 */
+  --c-joon: #e07a5f;        /* 아빠 - 코랄 */
+  --c-spring: #c98bb9;      /* 엄마 - 로즈 */
+  --c-meriel: #e8a33d;      /* 큰딸 - 앰버 */
+  --c-jason: #6a9bd1;       /* 큰아들 - 블루 */
+  --c-elvin: #7ab87a;       /* 작은아들 - 그린 */
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  font-size: 16px;
+}
+body {
+  background-image: radial-gradient(circle at 50% -20%, #fff5e6 0%, var(--bg) 55%);
+  background-attachment: fixed;
+}
+
+/* 레이아웃 */
+.page { display: none; padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 8px); }
+.page.active { display: block; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 18px; }
+
+/* 탑바 */
+.topbar {
+  background: rgba(253,246,236,0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 18px 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-inner { max-width: 640px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+.topbar-title { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; font-size: 21px; font-weight: 700; color: var(--accent2); letter-spacing: -0.01em; }
+.topbar-user { display: flex; align-items: center; gap: 7px; }
+.topbar-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.topbar-name { font-size: 13px; color: var(--text2); font-weight: 600; }
+
+/* 탭바 */
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--tab-h) + var(--safe-bottom));
+  background: rgba(255,253,250,0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  display: flex; z-index: 100;
+  padding-bottom: var(--safe-bottom);
+}
+.tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: var(--text3); transition: color 0.15s; }
+.tab-item.active { color: var(--accent2); }
+.tab-icon { font-size: 21px; }
+.tab-label { font-size: 10px; font-weight: 600; }
+
+/* 카드 */
+.card { background: var(--surface); border-radius: 18px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 2px 12px rgba(120,80,40,0.05); }
+
+/* 로그인 화면 */
+#loginScreen { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; }
+#loginScreen.show { display: flex; }
+.login-icon { font-size: 56px; margin-bottom: 16px; }
+.login-title { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; font-size: 30px; font-weight: 700; color: var(--accent2); margin-bottom: 10px; letter-spacing: -0.02em; }
+.login-sub { font-size: 15px; color: var(--text2); line-height: 1.7; margin-bottom: 36px; }
+.google-btn { display: inline-flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 28px; font-size: 16px; font-weight: 600; color: var(--text); cursor: pointer; font-family: inherit; box-shadow: 0 2px 10px rgba(120,80,40,0.08); transition: transform 0.12s; }
+.google-btn:active { transform: scale(0.97); }
+.google-g { width: 20px; height: 20px; }
+.login-err { color: var(--accent2); font-size: 14px; margin-top: 20px; line-height: 1.6; max-width: 340px; }
+
+/* 앱 본체 */
+#appScreen { display: none; }
+#appScreen.show { display: block; }
+
+/* 오늘의 묵상 헤더 */
+.devo-hero { padding: 24px 18px 8px; text-align: center; }
+.devo-date { font-size: 13px; color: var(--text3); font-weight: 600; letter-spacing: 0.02em; margin-bottom: 8px; }
+.devo-title { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.35; letter-spacing: -0.01em; margin-bottom: 6px; }
+.devo-scripture { font-size: 14px; color: var(--accent2); font-weight: 600; }
+
+/* 섹션 */
+.section { background: var(--surface); border-radius: 18px; margin: 0 18px 14px; padding: 18px; box-shadow: 0 2px 12px rgba(120,80,40,0.05); }
+.section-label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--accent); text-transform: uppercase; margin-bottom: 12px; }
+
+/* 핵심 구절 */
+.key-verse { background: linear-gradient(135deg, var(--amber-bg), var(--accent-bg)); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+.key-verse-text { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; font-size: 17px; color: var(--accent2); line-height: 1.75; }
+.key-verse-ref { font-size: 13px; color: var(--amber); font-weight: 600; margin-top: 8px; }
+
+/* 성경 본문 */
+.passage { background: var(--surface2); border-radius: 14px; padding: 16px; }
+.passage-head { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.verse { display: block; margin-bottom: 7px; font-size: 15px; line-height: 1.8; color: var(--text2); }
+.verse-num { font-size: 10px; font-weight: 700; color: var(--text3); margin-right: 5px; vertical-align: super; }
+.verse-key { font-weight: 700; color: var(--accent2); }
+
+/* 묵상 본문 */
+.meditation { font-size: 16px; line-height: 1.9; color: var(--text2); }
+.meditation p { margin-bottom: 14px; }
+.meditation p:last-child { margin-bottom: 0; }
+.meditation em { font-style: normal; font-weight: 700; color: var(--accent2); }
+.age-badge { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; border-radius: 8px; padding: 3px 10px; margin-left: 8px; vertical-align: middle; }
+
+/* 질문 */
+/* 핵심구절 따라쓰기 */
+.trace-guide { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; }
+.trace-target { background: var(--amber-bg); border-radius: 12px; padding: 14px 16px; font-size: 16px; line-height: 1.8; color: var(--accent2); font-weight: 600; margin-bottom: 12px; }
+.trace-input { min-height: 64px; }
+.trace-status { font-size: 13px; font-weight: 600; margin-top: 8px; min-height: 18px; }
+.trace-status.ok { color: var(--green); }
+.trace-status.wait { color: var(--text3); }
+
+/* 질문 */
+.q-block { margin-bottom: 16px; }
+.q-block:last-child { margin-bottom: 0; }
+.q-text { display: flex; gap: 9px; margin-bottom: 10px; }
+.q-mark { font-size: 11px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 8px; padding: 3px 9px; flex-shrink: 0; height: fit-content; }
+.q-body { font-size: 15px; line-height: 1.6; color: var(--text); font-weight: 600; padding-top: 2px; }
+.q-input { width: 100%; min-height: 70px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 15px; font-family: inherit; color: var(--text); background: var(--surface2); resize: none; line-height: 1.6; }
+.q-input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+/* 기도 */
+.prayer-item { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; color: var(--text2); line-height: 1.7; }
+.prayer-item:last-child { border-bottom: none; }
+.prayer-dot { color: var(--accent); font-size: 13px; padding-top: 3px; }
+
+/* 읽음 완료 버튼 */
+.done-btn { display: block; width: calc(100% - 36px); margin: 4px 18px 20px; background: var(--accent); color: #fff; border: none; border-radius: 16px; padding: 17px; font-size: 17px; font-weight: 700; font-family: inherit; cursor: pointer; box-shadow: 0 4px 14px rgba(224,122,95,0.3); transition: transform 0.12s; }
+.done-btn:active { transform: scale(0.98); }
+.done-btn.completed { background: var(--green); box-shadow: 0 4px 14px rgba(122,158,126,0.3); }
+
+/* 생성 버튼 (아빠 전용) */
+.generate-btn { display: block; width: calc(100% - 36px); margin: 0 18px 14px; background: var(--amber); color: #fff; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; box-shadow: 0 3px 10px rgba(232,163,61,0.28); }
+.generate-btn:active { opacity: 0.85; }
+
+/* 빈 상태 / 진행 */
+.empty-state { padding: 70px 24px; text-align: center; color: var(--text3); font-size: 15px; line-height: 1.9; }
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.progress-box { padding: 50px 24px; text-align: center; }
+.progress-title { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; font-size: 20px; color: var(--accent2); margin-bottom: 24px; }
+.progress-step { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 12px; font-size: 14px; color: var(--text3); margin-bottom: 7px; background: var(--surface); transition: all 0.2s; }
+.progress-step.active { color: var(--accent2); background: var(--accent-bg); }
+.progress-step.done { color: var(--text2); }
+.progress-step.error { color: var(--accent2); }
+.step-icon { font-size: 15px; width: 20px; text-align: center; }
+
+/* 내 연속일 + 뱃지 배너 */
+.me-banner { display: flex; align-items: center; gap: 16px; padding: 20px 18px 12px; }
+.me-streak { background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 18px; padding: 14px 18px; color: #fff; text-align: center; min-width: 92px; flex-shrink: 0; }
+.me-streak-num { font-size: 30px; font-weight: 800; line-height: 1; }
+.me-streak-label { font-size: 12px; font-weight: 600; margin-top: 4px; opacity: 0.95; }
+.me-badges { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+.badge-chip { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line); }
+.badge-chip.earned { background: var(--amber-bg); border-color: var(--amber); }
+.badge-chip-emoji { font-size: 18px; filter: grayscale(1) opacity(0.4); }
+.badge-chip.earned .badge-chip-emoji { filter: none; }
+.badge-chip-label { font-size: 9px; font-weight: 700; color: var(--text3); margin-top: 1px; }
+.badge-chip.earned .badge-chip-label { color: var(--amber); }
+
+/* 달력 카드 */
+.cal-card { background: var(--surface); border-radius: 18px; margin: 0 18px 14px; padding: 16px 14px; box-shadow: 0 2px 12px rgba(120,80,40,0.05); }
+.cal-header { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 4px; }
+.cal-title { font-size: 17px; font-weight: 700; color: var(--text); min-width: 110px; text-align: center; }
+.cal-nav { background: var(--surface2); border: none; border-radius: 8px; width: 30px; height: 30px; font-size: 16px; color: var(--accent2); font-weight: 700; cursor: pointer; }
+.cal-sub { text-align: center; font-size: 12px; color: var(--accent2); font-weight: 600; margin-bottom: 12px; }
+.cal-dow-row, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { text-align: center; font-size: 11px; color: var(--text3); font-weight: 600; padding-bottom: 4px; }
+.cal-dow:first-child { color: #d9776a; }
+.cal-cell { min-height: 56px; border-radius: 10px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; }
+.cal-cell.empty { background: transparent; }
+.cal-cell.filled { background: var(--surface2); }
+.cal-cell.today { background: var(--accent-bg); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.cal-daynum { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 3px; }
+.cal-cell.today .cal-daynum { color: var(--accent2); font-weight: 700; }
+.cal-dots { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; }
+.cal-dot { width: 15px; height: 15px; border-radius: 50%; color: #fff; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.cal-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
+.cal-legend-dot { width: 13px; height: 13px; border-radius: 50%; color: #fff; font-size: 7px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+/* 뱃지 안내 카드 */
+.badge-info-card { background: var(--surface); border-radius: 18px; margin: 0 18px 14px; padding: 16px; box-shadow: 0 2px 12px rgba(120,80,40,0.05); }
+.badge-info-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.badge-info-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.badge-info-row:last-child { border-bottom: none; }
+.badge-info-emoji { font-size: 18px; width: 26px; text-align: center; }
+.badge-info-emoji.locked { filter: grayscale(1) opacity(0.4); }
+.badge-info-text { flex: 1; font-size: 13px; color: var(--text2); }
+.badge-info-text b { color: var(--text); font-weight: 700; }
+.badge-info-reward { font-size: 12px; font-weight: 700; color: var(--accent2); }
+.badge-info-group { font-size: 11px; font-weight: 700; color: var(--text3); margin: 10px 0 4px; }
+
+/* 오늘 묵상 시작 버튼 */
+.start-btn { display: block; width: calc(100% - 36px); margin: 4px 18px 20px; background: var(--accent); color: #fff; border: none; border-radius: 16px; padding: 17px; font-size: 17px; font-weight: 700; font-family: inherit; cursor: pointer; box-shadow: 0 4px 14px rgba(224,122,95,0.3); transition: transform 0.12s; }
+.start-btn:active { transform: scale(0.98); }
+.start-btn.done { background: var(--surface2); color: var(--accent2); box-shadow: none; }
+
+/* 토스트 */
+.toast { position: fixed; bottom: calc(var(--tab-h) + var(--safe-bottom) + 16px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: #fff; padding: 12px 22px; border-radius: 12px; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 300; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.saved-tag { font-size: 12px; color: var(--green); font-weight: 600; opacity: 0; transition: opacity 0.3s; margin-left: 8px; }
+.saved-tag.show { opacity: 1; }
+.logout-link { font-size: 12px; color: var(--text3); text-decoration: underline; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ════ 로그인 화면 ════ -->
+<div id="loginScreen">
+  <div class="login-icon">🌅</div>
+  <div class="login-title">우리집 묵상</div>
+  <div class="login-sub">매일 아침, 온 가족이<br>같은 말씀 앞에 함께 섭니다</div>
+  <button class="google-btn" id="googleLoginBtn">
+    <svg class="google-g" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+    Google로 시작하기
+  </button>
+  <div class="login-err" id="loginErr"></div>
+</div>
+
+<!-- ════ 앱 본체 ════ -->
+<div id="appScreen">
+
+  <!-- 탑바 -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-title">우리집 묵상</div>
+      <div class="topbar-user">
+        <div class="topbar-avatar" id="myAvatar"></div>
+        <div>
+          <div class="topbar-name" id="myName"></div>
+          <div class="logout-link" id="logoutBtn">로그아웃</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 묵상 탭 ── -->
+  <div class="page" id="pageDevo">
+
+    <!-- 빈 상태 -->
+    <div id="devoEmpty" class="empty-state" style="display:none">
+      <div class="empty-icon">🕊️</div>
+      <div id="devoEmptyMsg">오늘의 묵상이 아직 준비되지 않았어요.</div>
+    </div>
+
+    <!-- 생성 진행 -->
+    <div id="devoProgress" class="progress-box" style="display:none">
+      <div class="progress-title">오늘의 묵상 준비 중...</div>
+      <div class="progress-step" id="gstep0"><span class="step-icon">○</span><span>오늘 ODB 글 가져오는 중...</span></div>
+      <div class="progress-step" id="gstep1"><span class="step-icon">○</span><span>성경 본문 한글로 가져오는 중...</span></div>
+      <div class="progress-step" id="gstep2"><span class="step-icon">○</span><span>연령별 묵상 만드는 중...</span></div>
+      <div class="progress-step" id="gstep3"><span class="step-icon">○</span><span>가족에게 전달 중...</span></div>
+    </div>
+
+    <!-- 묵상 본문 -->
+    <div id="devoContent" style="display:none">
+      <div class="devo-hero">
+        <div class="devo-date" id="dvDate"></div>
+        <div class="devo-title" id="dvTitle"></div>
+        <div class="devo-scripture" id="dvScripture"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">✦ 핵심 구절</div>
+        <div class="key-verse">
+          <div class="key-verse-text" id="dvKeyVerse"></div>
+          <div class="key-verse-ref" id="dvKeyVerseRef"></div>
+        </div>
+        <div class="passage" id="dvPassageWrap" style="display:none">
+          <div class="passage-head" id="dvPassageHead"></div>
+          <div id="dvPassageText"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">✦ 묵상 <span class="age-badge" id="dvAgeBadge"></span></div>
+        <div class="meditation" id="dvMeditation"></div>
+      </div>
+
+      <div class="section" id="traceSection" style="display:none">
+        <div class="section-label">✦ 핵심 구절 따라 쓰기</div>
+        <div class="trace-guide">오늘의 핵심 구절을 또박또박 따라 적어 보세요. 적고 나면 완료할 수 있어요.</div>
+        <div class="trace-target" id="traceTarget"></div>
+        <textarea class="q-input trace-input" id="traceInput" placeholder="여기에 따라 적어요…"></textarea>
+        <div class="trace-status" id="traceStatus"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">✦ 함께 생각해요</div>
+        <div class="q-block">
+          <div class="q-text"><span class="q-mark">Q1</span><span class="q-body" id="dvQ1"></span></div>
+          <textarea class="q-input" id="ans1" placeholder="짧게 적어보세요…"></textarea>
+        </div>
+        <div class="q-block">
+          <div class="q-text"><span class="q-mark">Q2</span><span class="q-body" id="dvQ2"></span></div>
+          <textarea class="q-input" id="ans2" placeholder="짧게 적어보세요…"></textarea>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">✦ 기도제목</div>
+        <div id="dvPrayers"></div>
+      </div>
+
+      <button class="done-btn" id="doneBtn">✓ 오늘 묵상 완료</button>
+    </div>
+
+    <!-- 아빠 전용 생성 버튼 -->
+    <button class="generate-btn" id="generateBtn" style="display:none">⛅ 오늘 가족 묵상 생성하기</button>
+
+  </div>
+
+  <!-- ── 우리 가족 (달력) 탭 ── -->
+  <div class="page active" id="pageFamily">
+
+    <!-- 내 연속일 + 뱃지 -->
+    <div class="me-banner">
+      <div class="me-streak">
+        <div class="me-streak-num" id="meStreakNum">0</div>
+        <div class="me-streak-label">일 연속 🔥</div>
+      </div>
+      <div class="me-badges" id="meBadges"></div>
+    </div>
+
+    <!-- 이번 달 가족 달력 -->
+    <div class="cal-card">
+      <div class="cal-header">
+        <button class="cal-nav" id="calPrev">‹</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button class="cal-nav" id="calNext">›</button>
+      </div>
+      <div class="cal-sub" id="familySub"></div>
+      <div class="cal-dow-row">
+        <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+        <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend" id="calLegend"></div>
+    </div>
+
+    <!-- 뱃지 안내 -->
+    <div class="badge-info-card" id="badgeInfoCard"></div>
+
+    <!-- 오늘 묵상 시작 -->
+    <button class="start-btn" id="startTodayBtn">📖 오늘의 묵상 시작</button>
+
+  </div>
+
+</div>
+
+<!-- 탭바 -->
+<div class="tabbar" id="tabbar" style="display:none">
+  <div class="tab-item active" data-tab="pageFamily">
+    <div class="tab-icon">📅</div>
+    <div class="tab-label">우리 가족</div>
+  </div>
+  <div class="tab-item" data-tab="pageDevo">
+    <div class="tab-icon">📖</div>
+    <div class="tab-label">오늘 묵상</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, onSnapshot }
+  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
+
+// ════════════════════════════════════════════════════
+// Firebase 설정
+// ════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyCrzh_wxWkwVWJA2IwXdHTXJlnpa_CW2Zg",
+  authDomain: "fmoringdevotion.firebaseapp.com",
+  projectId: "fmoringdevotion",
+  storageBucket: "fmoringdevotion.firebasestorage.app",
+  messagingSenderId: "28040226960",
+  appId: "1:28040226960:web:8d7f1c6730929802f2d015"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// ════════════════════════════════════════════════════
+// 가족 명단 (이메일 → 정보). 바꾸려면 여기만 수정.
+// ════════════════════════════════════════════════════
+const FAMILY = {
+  'joon.kim@educclesia.com':       { name: '아빠',   key: 'joon',   color: 'var(--c-joon)',   ageGroup: 'adult',  order: 0 },
+  'bomicho.coldwater@gmail.com':   { name: 'Spring', key: 'spring', color: 'var(--c-spring)', ageGroup: 'adult',  order: 1 },
+  'creativemeriel@gmail.com':      { name: 'Meriel', key: 'meriel', color: 'var(--c-meriel)', ageGroup: 'teen',   order: 2 },
+  'jasoncanada0506@gmail.com':     { name: 'Jason',  key: 'jason',  color: 'var(--c-jason)',  ageGroup: 'teen',   order: 3 },
+  'elvinkim827@gmail.com':         { name: 'Elvin',  key: 'elvin',  color: 'var(--c-elvin)',  ageGroup: 'child',  order: 4 }
+};
+const ADMIN_EMAIL = 'joon.kim@educclesia.com';   // 묵상 생성 권한
+const AGE_LABELS = { adult: '어른용', teen: '청소년용', child: '어린이용' };
+const AGE_COLORS = { adult: 'var(--accent)', teen: 'var(--c-jason)', child: 'var(--c-elvin)' };
+
+// 뱃지 정의
+// 연속(streak) 뱃지
+const STREAK_BADGES = [
+  { days: 7,   emoji: '🥉', label: '7일',   reward: 'CU 상품권' },
+  { days: 30,  emoji: '🥈', label: '30일',  reward: '50,000원' },
+  { days: 180, emoji: '🥇', label: '180일', reward: '300,000원' }
+];
+// 누적(total) 뱃지
+const TOTAL_BADGES = [
+  { days: 30,  emoji: '🌱', label: '30일',  reward: '30,000원' },
+  { days: 90,  emoji: '🌿', label: '90일',  reward: '90,000원' },
+  { days: 180, emoji: '🌳', label: '180일', reward: '180,000원' },
+  { days: 270, emoji: '🏆', label: '270일', reward: '270,000원' },
+  { days: 360, emoji: '👑', label: '360일', reward: '360,000원' }
+];
+
+let currentUser = null;   // { email, name, key, color, ageGroup }
+let familyRecords = {};   // 최근 구독된 가족 완료 기록 (userKey -> Set)
+const calCursor = { y: 0, m: 0 };   // 현재 보고 있는 달력 월 (0=미설정)
+let todayDevo = null;     // 오늘 묵상 데이터
+
+// ════════════════════════════════════════════════════
+// 날짜 유틸 — 사용자가 보는 건 한국 시간
+// ════════════════════════════════════════════════════
+function getKoreaDate() {
+  // 브라우저 로컬이 한국이면 그대로. 안전하게 KST로 보정.
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utc + 9 * 3600000);
+}
+function fmtKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function todayKey() { return fmtKey(getKoreaDate()); }
+function fmtKorean(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${dow})`;
+}
+
+// ════════════════════════════════════════════════════
+// 인증
+// ════════════════════════════════════════════════════
+document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+  document.getElementById('loginErr').textContent = '';
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    document.getElementById('loginErr').textContent = '로그인 중 문제가 발생했어요: ' + (e.code || e.message);
+  }
+});
+document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { showLogin(); return; }
+  const email = (user.email || '').toLowerCase();
+  const info = FAMILY[email];
+  if (!info) {
+    // 가족 명단에 없는 계정
+    await signOut(auth);
+    showLogin('이 앱은 가족 구성원만 사용할 수 있어요.<br>다른 구글 계정으로 로그인하셨다면<br>가족 계정으로 다시 시도해 주세요.');
+    return;
+  }
+  currentUser = { email, ...info };
+  showApp();
+});
+
+function showLogin(errMsg) {
+  document.getElementById('loginScreen').classList.add('show');
+  document.getElementById('appScreen').classList.remove('show');
+  document.getElementById('tabbar').style.display = 'none';
+  if (errMsg) document.getElementById('loginErr').innerHTML = errMsg;
+}
+
+function showApp() {
+  document.getElementById('loginScreen').classList.remove('show');
+  document.getElementById('appScreen').classList.add('show');
+  document.getElementById('tabbar').style.display = 'flex';
+  // 탑바 사용자 표시
+  document.getElementById('myName').textContent = currentUser.name;
+  const av = document.getElementById('myAvatar');
+  av.textContent = currentUser.name[0];
+  av.style.background = currentUser.color;
+  // 아빠면 생성 버튼 노출
+  if (currentUser.email === ADMIN_EMAIL) {
+    document.getElementById('generateBtn').style.display = 'block';
+  }
+  loadToday();
+  watchFamily();
+}
+
+// ════════════════════════════════════════════════════
+// 탭 전환
+// ════════════════════════════════════════════════════
+document.querySelectorAll('.tab-item').forEach(t => {
+  t.addEventListener('click', () => switchTab(t.dataset.tab));
+});
+function switchTab(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.tab-item').forEach(x => x.classList.toggle('active', x.dataset.tab === pageId));
+  window.scrollTo({ top: 0 });
+}
+
+// 달력 월 이동
+document.getElementById('calPrev').addEventListener('click', () => {
+  calCursor.m--; if (calCursor.m < 0) { calCursor.m = 11; calCursor.y--; }
+  renderFamily(familyRecords);
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  calCursor.m++; if (calCursor.m > 11) { calCursor.m = 0; calCursor.y++; }
+  renderFamily(familyRecords);
+});
+
+// 오늘 묵상 시작 버튼 → 묵상 탭으로
+document.getElementById('startTodayBtn').addEventListener('click', () => {
+  switchTab('pageDevo');
+});
+
+// ════════════════════════════════════════════════════
+// 오늘 묵상 로드 (Firestore)
+// ════════════════════════════════════════════════════
+async function loadToday() {
+  const dk = todayKey();
+  showDevoView('loading');
+  try {
+    const snap = await getDoc(doc(db, 'devotions', dk));
+    if (snap.exists()) {
+      todayDevo = snap.data();
+      renderDevo(todayDevo);
+      await loadMyProgress(dk);
+    } else {
+      todayDevo = null;
+      showDevoView('empty');
+    }
+  } catch (e) {
+    showDevoView('empty');
+    document.getElementById('devoEmptyMsg').innerHTML = '묵상을 불러오지 못했어요.<br><small>' + (e.message || '') + '</small>';
+  }
+}
+
+function showDevoView(mode) {
+  document.getElementById('devoEmpty').style.display = mode === 'empty' ? 'block' : 'none';
+  document.getElementById('devoProgress').style.display = mode === 'progress' ? 'block' : 'none';
+  document.getElementById('devoContent').style.display = mode === 'content' ? 'block' : 'none';
+  if (mode === 'loading') {
+    document.getElementById('devoEmpty').style.display = 'none';
+    document.getElementById('devoContent').style.display = 'none';
+  }
+  // 생성 버튼은 아빠가 로그인했고 오늘 묵상이 없을 때만
+  const gb = document.getElementById('generateBtn');
+  if (currentUser && currentUser.email === ADMIN_EMAIL) {
+    gb.style.display = (mode === 'empty') ? 'block' : 'none';
+  }
+}
+
+// ════════════════════════════════════════════════════
+// 묵상 렌더 (연령별)
+// ════════════════════════════════════════════════════
+function renderDevo(d) {
+  showDevoView('content');
+  const g = currentUser.ageGroup;
+  const m = d.byAge[g] || d.byAge.adult;   // 내 연령 버전
+
+  document.getElementById('dvDate').textContent = fmtKorean(d.dateId);
+  document.getElementById('dvTitle').textContent = d.title_ko || d.title_en;
+  document.getElementById('dvScripture').textContent = d.scripture_ref;
+
+  document.getElementById('dvKeyVerse').textContent = '"' + (d.key_verse_ko || '') + '"';
+  document.getElementById('dvKeyVerseRef').textContent = '— ' + (d.key_verse_ref || '');
+
+  // 성경 본문
+  if (d.passage && d.passage.verses && d.passage.verses.length) {
+    document.getElementById('dvPassageWrap').style.display = 'block';
+    const refTail = (d.scripture_ref.match(/(\d+:\S+)$/) || [])[1] || d.scripture_ref;
+    document.getElementById('dvPassageHead').textContent = d.passage.book_ko + ' ' + refTail;
+    let keyNum = ((d.key_verse_ref || '').match(/(\d+):(\d+)/) || [])[2];
+    document.getElementById('dvPassageText').innerHTML = d.passage.verses.map(v =>
+      `<span class="verse"><span class="verse-num">${v.num}</span>${v.num === keyNum ? `<span class="verse-key">${v.text}</span>` : v.text}</span>`
+    ).join('');
+  } else {
+    document.getElementById('dvPassageWrap').style.display = 'none';
+  }
+
+  // 연령 배지
+  const badge = document.getElementById('dvAgeBadge');
+  badge.textContent = AGE_LABELS[g];
+  badge.style.background = AGE_COLORS[g];
+
+  // 묵상 본문 + 질문 + 기도 (연령 버전)
+  document.getElementById('dvMeditation').innerHTML = m.meditation;
+  document.getElementById('dvQ1').textContent = m.q1;
+  document.getElementById('dvQ2').textContent = m.q2;
+  const pr = document.getElementById('dvPrayers');
+  pr.innerHTML = (m.prayers || []).map(p =>
+    `<div class="prayer-item"><span class="prayer-dot">✦</span><span>${p}</span></div>`
+  ).join('');
+
+  // 핵심구절 따라쓰기 — child·teen만 필수. adult는 섹션 숨김.
+  const traceSection = document.getElementById('traceSection');
+  const needTrace = (g === 'child' || g === 'teen');
+  if (needTrace) {
+    traceSection.style.display = 'block';
+    document.getElementById('traceTarget').textContent = d.key_verse_ko || '';
+    updateTraceStatus();
+  } else {
+    traceSection.style.display = 'none';
+    const btn = document.getElementById('doneBtn');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+// 따라쓰기 정규화: 공백·문장부호 제거하고 글자만 비교
+function normTrace(s) {
+  return (s || '').replace(/[\s.,!?'"·…「」"".]/g, '').replace(/[^\uAC00-\uD7A3a-zA-Z0-9]/g, '');
+}
+// 두 문자열의 글자 일치율 (간단: 목표 글자 중 입력에 들어있는 비율)
+function traceMatchRatio() {
+  const target = normTrace(document.getElementById('traceTarget').textContent);
+  const input = normTrace(document.getElementById('traceInput').value);
+  if (!target) return 1;        // 핵심구절이 없으면 통과 처리
+  if (!input) return 0;
+  // 길이 기준 + 앞에서부터 일치 글자 수 기준 둘 다 봐서 관대하게
+  let match = 0;
+  for (let i = 0; i < Math.min(target.length, input.length); i++) {
+    if (target[i] === input[i]) match++;
+  }
+  const byPos = match / target.length;
+  const byLen = Math.min(input.length / target.length, 1);
+  return Math.min(byPos + (byLen >= 0.9 ? 0.1 : 0), Math.max(byPos, byLen >= 0.95 ? byLen * 0.85 : 0));
+}
+const TRACE_PASS = 0.8;   // 80% 이상이면 통과
+function traceOk() {
+  const g = currentUser && currentUser.ageGroup;
+  if (g !== 'child' && g !== 'teen') return true;   // 어른은 항상 통과
+  return traceMatchRatio() >= TRACE_PASS;
+}
+function updateTraceStatus() {
+  const st = document.getElementById('traceStatus');
+  if (!st) return;
+  const input = document.getElementById('traceInput').value.trim();
+  if (!input) { st.textContent = '핵심 구절을 따라 적어 주세요.'; st.className = 'trace-status wait'; }
+  else if (traceOk()) { st.textContent = '잘 적었어요! 이제 완료할 수 있어요 ✓'; st.className = 'trace-status ok'; }
+  else { st.textContent = '조금만 더 정확하게 적어 볼까요?'; st.className = 'trace-status wait'; }
+  refreshDoneEnabled();
+}
+function refreshDoneEnabled() {
+  const btn = document.getElementById('doneBtn');
+  if (btn.classList.contains('completed')) return;   // 이미 완료된 건 건드리지 않음
+  const ok = traceOk();
+  btn.disabled = !ok;
+  btn.style.opacity = ok ? '1' : '0.45';
+}
+
+// ════════════════════════════════════════════════════
+// 내 진행 상태 (답변/완료) 로드 + 저장
+// ════════════════════════════════════════════════════
+function progressDocId(dateId, userKey) { return `${dateId}_${userKey}`; }
+
+async function loadMyProgress(dk) {
+  try {
+    const snap = await getDoc(doc(db, 'progress', progressDocId(dk, currentUser.key)));
+    const done = snap.exists() && snap.data().completed;
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.ans1) document.getElementById('ans1').value = data.ans1;
+      if (data.ans2) document.getElementById('ans2').value = data.ans2;
+      if (data.trace) document.getElementById('traceInput').value = data.trace;
+    }
+    setDoneButton(done);
+    if (!done) updateTraceStatus(); else refreshDoneEnabled();
+  } catch (e) { setDoneButton(false); }
+}
+
+function setDoneButton(done) {
+  const btn = document.getElementById('doneBtn');
+  if (done) {
+    btn.textContent = '✓ 오늘 묵상 완료됨';
+    btn.classList.add('completed');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  } else {
+    btn.textContent = '✓ 오늘 묵상 완료';
+    btn.classList.remove('completed');
+  }
+}
+
+document.getElementById('doneBtn').addEventListener('click', async () => {
+  const dk = todayKey();
+  if (!todayDevo) return;
+  if (!traceOk()) { showToast('핵심 구절을 먼저 따라 적어 주세요 ✍️'); return; }
+  const btn = document.getElementById('doneBtn');
+  btn.textContent = '저장 중...';
+  try {
+    await setDoc(doc(db, 'progress', progressDocId(dk, currentUser.key)), {
+      dateId: dk,
+      userKey: currentUser.key,
+      userName: currentUser.name,
+      email: currentUser.email,
+      ans1: document.getElementById('ans1').value.trim(),
+      ans2: document.getElementById('ans2').value.trim(),
+      trace: document.getElementById('traceInput').value.trim(),
+      completed: true,
+      completedAt: Date.now()
+    }, { merge: true });
+    setDoneButton(true);
+    showToast('오늘 묵상 완료! 🌿');
+  } catch (e) {
+    showToast('저장 실패: ' + (e.message || ''));
+    setDoneButton(false);
+  }
+});
+
+// 답변 입력 시 자동 저장(디바운스)
+let saveTimer = null;
+['ans1', 'ans2'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveAnswersQuiet, 1200);
+  });
+});
+// 따라쓰기 입력: 입력할 때마다 통과 여부 갱신 + 자동 저장
+document.getElementById('traceInput').addEventListener('input', () => {
+  updateTraceStatus();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveAnswersQuiet, 1200);
+});
+async function saveAnswersQuiet() {
+  if (!todayDevo || !currentUser) return;
+  const dk = todayKey();
+  try {
+    await setDoc(doc(db, 'progress', progressDocId(dk, currentUser.key)), {
+      dateId: dk, userKey: currentUser.key, userName: currentUser.name, email: currentUser.email,
+      ans1: document.getElementById('ans1').value.trim(),
+      ans2: document.getElementById('ans2').value.trim(),
+      trace: document.getElementById('traceInput').value.trim()
+    }, { merge: true });
+  } catch (e) { /* 조용히 무시 */ }
+}
+
+// ════════════════════════════════════════════════════
+// 가족 현황 (실시간 구독)
+// ════════════════════════════════════════════════════
+function watchFamily() {
+  // 최근 7일 격자 + 연속일 계산용
+  onSnapshot(collection(db, 'progress'), (qs) => {
+    const records = {};   // userKey -> Set(dateId completed)
+    qs.forEach(s => {
+      const d = s.data();
+      if (!d.completed) return;
+      (records[d.userKey] = records[d.userKey] || new Set()).add(d.dateId);
+    });
+    renderFamily(records);
+  });
+}
+
+function calcStreak(doneSet) {
+  let streak = 0;
+  const cur = getKoreaDate();
+  if (!doneSet.has(fmtKey(cur))) cur.setDate(cur.getDate() - 1);
+  while (doneSet.has(fmtKey(cur))) { streak++; cur.setDate(cur.getDate() - 1); }
+  return streak;
+}
+function calcTotal(doneSet) { return doneSet.size; }
+
+function highestBadge(value, badges) {
+  let earned = null;
+  for (const b of badges) if (value >= b.days) earned = b;
+  return earned;
+}
+
+function renderFamily(records) {
+  familyRecords = records;
+  const members = Object.entries(FAMILY).sort((a,b) => a[1].order - b[1].order);
+  const tk = todayKey();
+
+  // ── 내 연속일 + 뱃지 ──
+  const mySet = records[currentUser.key] || new Set();
+  const myStreak = calcStreak(mySet);
+  const myTotal = calcTotal(mySet);
+  document.getElementById('meStreakNum').textContent = myStreak;
+
+  // 내 뱃지칩 (연속+누적 통합 표시: 획득한 것만 켜짐)
+  const allBadges = [
+    ...STREAK_BADGES.map(b => ({ ...b, type:'연속', earned: myStreak >= b.days })),
+    ...TOTAL_BADGES.map(b => ({ ...b, type:'누적', earned: myTotal >= b.days }))
+  ];
+  document.getElementById('meBadges').innerHTML = allBadges.map(b =>
+    `<div class="badge-chip ${b.earned ? 'earned' : ''}">
+       <div class="badge-chip-emoji">${b.emoji}</div>
+       <div class="badge-chip-label">${b.label}</div>
+     </div>`
+  ).join('');
+
+  // ── 달력 ──
+  if (calCursor.y === 0) { const k = getKoreaDate(); calCursor.y = k.getFullYear(); calCursor.m = k.getMonth(); }
+  renderCalendar(records, members);
+
+  // ── 오늘 완료 요약 ──
+  let todayDone = 0;
+  members.forEach(([e, m]) => { if ((records[m.key] || new Set()).has(tk)) todayDone++; });
+  document.getElementById('familySub').textContent = `오늘 ${todayDone}/${members.length}명이 묵상을 마쳤어요`;
+
+  // ── 범례 ──
+  document.getElementById('calLegend').innerHTML = members.map(([e, m]) =>
+    `<div class="cal-legend-item"><span class="cal-legend-dot" style="background:${m.color}">${m.name[0]}</span>${m.name}</div>`
+  ).join('');
+
+  // ── 뱃지 안내 ──
+  renderBadgeInfo(myStreak, myTotal);
+
+  // ── 시작 버튼 상태 ──
+  updateStartButton();
+}
+
+function renderCalendar(records, members) {
+  const { y, m } = calCursor;
+  const tk = todayKey();
+  document.getElementById('calTitle').textContent = `${y}년 ${m+1}월`;
+
+  const firstDow = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const grid = document.getElementById('calGrid');
+  let html = '';
+  for (let i = 0; i < firstDow; i++) html += `<div class="cal-cell empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = ds === tk;
+    const dots = members.filter(([e, mm]) => (records[mm.key] || new Set()).has(ds))
+      .map(([e, mm]) => `<span class="cal-dot" style="background:${mm.color}">${mm.name[0]}</span>`).join('');
+    const cls = isToday ? 'today' : (dots ? 'filled' : '');
+    html += `<div class="cal-cell ${cls}"><div class="cal-daynum">${d}</div><div class="cal-dots">${dots}</div></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderBadgeInfo(myStreak, myTotal) {
+  const card = document.getElementById('badgeInfoCard');
+  const row = (b, value, type) => {
+    const earned = value >= b.days;
+    return `<div class="badge-info-row">
+      <div class="badge-info-emoji ${earned ? '' : 'locked'}">${b.emoji}</div>
+      <div class="badge-info-text"><b>${type} ${b.label}</b>${earned ? ' · 달성! ✓' : ` · ${Math.max(0, b.days - value)}일 남음`}</div>
+      <div class="badge-info-reward">${b.reward}</div>
+    </div>`;
+  };
+  card.innerHTML =
+    `<div class="badge-info-title">🎖️ 뱃지와 선물</div>` +
+    `<div class="badge-info-group">🔥 연속 출석</div>` +
+    STREAK_BADGES.map(b => row(b, myStreak, '연속')).join('') +
+    `<div class="badge-info-group">📚 누적 출석</div>` +
+    TOTAL_BADGES.map(b => row(b, myTotal, '누적')).join('');
+}
+
+function updateStartButton() {
+  const btn = document.getElementById('startTodayBtn');
+  const done = (familyRecords[currentUser.key] || new Set()).has(todayKey());
+  if (done) { btn.textContent = '✓ 오늘 묵상 완료 — 다시 보기'; btn.classList.add('done'); }
+  else { btn.textContent = '📖 오늘의 묵상 시작'; btn.classList.remove('done'); }
+}
+
+// ════════════════════════════════════════════════════
+// 토스트
+// ════════════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ════════════════════════════════════════════════════
+// 묵상 생성 (아빠 전용) — 생성 로직은 generate.js 모듈로 분리
+// ════════════════════════════════════════════════════
+document.getElementById('generateBtn').addEventListener('click', async () => {
+  const { generateTodayDevotion } = await import('./generate.js');
+  await generateTodayDevotion({ db, doc, setDoc, getDoc, todayKey, getKoreaDate, fmtKey,
+    setStep, showDevoView, loadToday, showToast });
+});
+
+function setStep(n, status, txt) {
+  const el = document.getElementById('gstep' + n);
+  if (!el) return;
+  const icon = el.querySelector('.step-icon');
+  el.classList.remove('active','done','error');
+  if (status) el.classList.add(status);
+  icon.textContent = status === 'active' ? '⏳' : status === 'done' ? '✓' : status === 'error' ? '✗' : '○';
+  if (txt) el.querySelector('span:last-child').textContent = txt;
+}
+
+// 전역 노출 (generate.js에서 진행 화면 제어용)
+window.__devoUI = { setStep, showDevoView };
+</script>
+</body>
+</html>
