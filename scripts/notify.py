@@ -96,6 +96,12 @@ def main():
     now = kst_now()
     date = now.strftime("%Y-%m-%d")
     hour = now.hour
+    # 안전장치: KST 21~23시가 아니면 보내지 않음 (지연 실행이 새벽에 도는 것 방지)
+    # 수동 테스트는 FORCE_RUN=1 로 우회
+    if hour not in (21, 22, 23) and os.environ.get("FORCE_RUN") != "1":
+        print(f"KST {hour}시 — 알림 시간대(21~23시) 아님, 종료")
+        return
+
     # 밤 9시(21)=가볍게, 10시(22)=한 번 더, 11시(23)=마지막 경고
     level = 1 if hour <= 21 else (2 if hour == 22 else 3)
 

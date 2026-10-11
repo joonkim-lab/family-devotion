@@ -1,11 +1,7 @@
 name: 우리집 묵상 알림
 
 on:
-  schedule:
-    # GitHub Actions cron은 UTC 기준. 한국시간 = UTC + 9h
-    - cron: '30 12 * * *'   # 21:30 KST (밤 9시 반)
-    - cron: '30 13 * * *'   # 22:30 KST (밤 10시 반)
-    - cron: '30 14 * * *'   # 23:30 KST (밤 11시 반) — 하루 마지막 경고
+  # 예약 실행은 맥미니(launchd)로 이전 — GitHub 스케줄은 지연이 커서 끔. 수동 테스트만 남김
   workflow_dispatch: {}   # Actions 탭에서 수동 실행(테스트)용
 
 # 같은 시각 중복 실행 방지
@@ -34,3 +30,4 @@ jobs:
           DEVOTION_BOT_PASSWORD: ${{ secrets.DEVOTION_BOT_PASSWORD }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_IDS: ${{ secrets.DISCORD_IDS }}
+          FORCE_RUN: '1'
