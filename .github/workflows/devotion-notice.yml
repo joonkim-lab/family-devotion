@@ -1,0 +1,36 @@
+name: 우리집 묵상 알림
+
+on:
+  schedule:
+    # GitHub Actions cron은 UTC 기준. 한국시간 = UTC + 9h
+    - cron: '0 0 * * *'   # 09:00 KST
+    - cron: '0 1 * * *'   # 10:00 KST
+    - cron: '0 2 * * *'   # 11:00 KST
+  workflow_dispatch: {}   # Actions 탭에서 수동 실행(테스트)용
+
+# 같은 시각 중복 실행 방지
+concurrency:
+  group: devotion-notice
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 의존성 설치
+        run: pip install --quiet requests
+
+      - name: 알림 실행
+        run: python scripts/notify.py
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          DEVOTION_BOT_EMAIL: ${{ secrets.DEVOTION_BOT_EMAIL }}
+          DEVOTION_BOT_PASSWORD: ${{ secrets.DEVOTION_BOT_PASSWORD }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_IDS: ${{ secrets.DISCORD_IDS }}
