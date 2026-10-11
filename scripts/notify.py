@@ -86,6 +86,44 @@ def post_discord(webhook, content, mention_ids):
     print("posted:", content.replace("\n", " "))
 
 
+def fs_str(fields, key):
+    return (fields or {}).get(key, {}).get("stringValue", "")
+
+
+def watch():
+    """5분마다 실행: ① 묵상 생성 즉시 안내 ② 전원 완료 즉시 축하. 각각 하루 1회."""
+    api_key = os.environ["FIREBASE_API_KEY"]
+    webhook = os.environ["DISCORD_WEBHOOK_URL"]
+    ids = parse_ids(os.environ.get("DISCORD_IDS", ""))
+    date = kst_now().strftime("%Y-%m-%d")
+
+    token = sign_in(api_key, os.environ["DEVOTION_BOT_EMAIL"], os.environ["DEVOTION_BOT_PASSWORD"])
+    devo = fs_get(f"devotions/{date}", token)
+    if devo is None:
+        print("오늘 묵상 미생성 — 대기")
+        return
+
+    # ① 생성 안내
+    if not fs_bool(devo, "createdAnnounced"):
+        title = fs_str(devo, "title_ko") or fs_str(devo, "title_en")
+        ref = fs_str(devo, "scripture_ref")
+        msg = f"📖 오늘의 가족 묵상이 준비됐어요!\n「{title}」" + (f" — {ref}" if ref else "")
+        msg += "\nhttps://joonkim-lab.github.io/family-devotion/"
+        post_discord(webhook, msg, [])
+        fs_set_flag(f"devotions/{date}", token, "createdAnnounced")
+
+    # ② 전원 완료 축하
+    if fs_bool(devo, "familyCelebrated"):
+        return
+    for key, _ in FAMILY:
+        if not fs_bool(fs_get(f"progress/{date}_{key}", token), "completed"):
+            return  # 아직 남은 사람 있음
+    post_discord(webhook,
+                 "🎉 오늘 우리 가족은 모두 묵상을 마쳤어요^^ 수고했어요, 가족 여러분! 🌿",
+                 list(ids.values()))
+    fs_set_flag(f"devotions/{date}", token, "familyCelebrated")
+
+
 def main():
     api_key = os.environ["FIREBASE_API_KEY"]
     email = os.environ["DEVOTION_BOT_EMAIL"]
@@ -153,4 +191,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--watch" in sys.argv:
+        watch()   # 5분 주기: 생성 안내 + 즉시 축하
+    else:
+        main()    # 21:30·22:30·23:30: 미완료 독촉
