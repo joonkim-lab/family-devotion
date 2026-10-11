@@ -3,9 +3,9 @@ name: 우리집 묵상 알림
 on:
   schedule:
     # GitHub Actions cron은 UTC 기준. 한국시간 = UTC + 9h
-    - cron: '0 0 * * *'   # 09:00 KST
-    - cron: '0 1 * * *'   # 10:00 KST
-    - cron: '0 2 * * *'   # 11:00 KST
+    - cron: '30 12 * * *'   # 21:30 KST (밤 9시 반)
+    - cron: '30 13 * * *'   # 22:30 KST (밤 10시 반)
+    - cron: '30 14 * * *'   # 23:30 KST (밤 11시 반) — 하루 마지막 경고
   workflow_dispatch: {}   # Actions 탭에서 수동 실행(테스트)용
 
 # 같은 시각 중복 실행 방지

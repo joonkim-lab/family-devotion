@@ -96,7 +96,8 @@ def main():
     now = kst_now()
     date = now.strftime("%Y-%m-%d")
     hour = now.hour
-    level = 1 if hour <= 9 else (2 if hour == 10 else 3)
+    # 밤 9시(21)=가볍게, 10시(22)=한 번 더, 11시(23)=마지막 경고
+    level = 1 if hour <= 21 else (2 if hour == 22 else 3)
 
     token = sign_in(api_key, email, password)
 
@@ -132,13 +133,13 @@ def main():
     used_ids = [ids[k] for k, _ in incomplete if k in ids]
     mentions = " ".join(mention(k, n) for k, n in incomplete)
 
-    if level == 1:      # 9시 — 가볍게
-        msg = (f"🌿 좋은 아침이에요! 아직 오늘 묵상 전인 가족: {mentions}\n"
-               f"오늘도 말씀 앞에 함께 서요 :)")
-    elif level == 2:    # 10시 — 한 번 더
-        msg = (f"⏰ 벌써 10시예요! 아직 묵상 안 하신 분: {mentions}\n"
-               f"잠깐 시간 내서 오늘 묵상 어때요?")
-    else:               # 11시 — 마지막, 강하게
+    if level == 1:      # 밤 9시 — 가볍게
+        msg = (f"🌿 오늘 하루도 마무리 시간이에요. 아직 묵상 전인 가족: {mentions}\n"
+               f"자기 전에 잠깐, 오늘 말씀 어때요? :)")
+    elif level == 2:    # 밤 10시 — 한 번 더
+        msg = (f"⏰ 벌써 밤 10시예요! 아직 묵상 안 하신 분: {mentions}\n"
+               f"오늘 넘어가기 전에 잠깐 시간 내봐요.")
+    else:               # 밤 11시 — 마지막, 강하게
         msg = (f"🔔 오늘의 마지막 알림이에요! 아직 묵상 전: {mentions}\n"
                f"오늘 넘기지 말고 꼭 함께해요 🙏")
 
