@@ -109,7 +109,7 @@ def watch():
     if not fs_bool(devo, "createdAnnounced"):
         title = fs_str(devo, "title_ko") or fs_str(devo, "title_en")
         ref = fs_str(devo, "scripture_ref")
-        msg = f"📖 오늘의 가족 묵상이 준비됐어요!\n「{title}」" + (f" — {ref}" if ref else "")
+        msg = f"📖 오늘자 묵상이 생성이 되었습니다\n「{title}」" + (f" — {ref}" if ref else "")
         msg += "\nhttps://joonkim-lab.github.io/family-devotion/"
         post_discord(webhook, msg, [])
         fs_set_flag(f"devotions/{date}", token, "createdAnnounced")
