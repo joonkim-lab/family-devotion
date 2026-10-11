@@ -78,9 +78,11 @@ def parse_ids(raw):
 
 
 def post_discord(webhook, content, mention_ids):
+    # 모든 알림은 @everyone — 가족 전원이 보고 서로 챙겨주도록 (새벽에도 울림, 기록이 우선)
+    content = "@everyone " + content
     r = requests.post(webhook, json={
         "content": content,
-        "allowed_mentions": {"users": mention_ids},  # 멘션이 실제로 핑 되도록
+        "allowed_mentions": {"parse": ["everyone", "users"]},  # @everyone + 개별 멘션 모두 실제로 울리게
     }, timeout=20)
     r.raise_for_status()
     print("posted:", content.replace("\n", " "))
