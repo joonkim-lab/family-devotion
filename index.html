@@ -630,6 +630,7 @@ async function loadToday() {
     const snap = await getDoc(doc(db, 'devotions', dk));
     if (snap.exists()) {
       todayDevo = snap.data();
+      await repairKeyVerse(dk, todayDevo);
       renderDevo(todayDevo);
       await loadMyProgress(dk);
     } else {
@@ -640,6 +641,21 @@ async function loadToday() {
     showDevoView('empty');
     document.getElementById('devoEmptyMsg').innerHTML = '묵상을 불러오지 못했어요.<br><small>' + (e.message || '') + '</small>';
   }
+}
+
+// 핵심 구절이 비어 저장된 날 보정 (2026-10 ODB verse-box 빈 칸 대응)
+// API 키가 있는 생성 권한자 기기에서만 한 번 채워 넣고 저장한다.
+async function repairKeyVerse(dk, d) {
+  if (d.key_verse_ko || !d.passage || !d.passage.verses || !d.passage.verses.length) return;
+  if (!currentUser || !canGenerate(currentUser.email)) return;
+  if (!localStorage.getItem('anthropic_api_key')) return;
+  try {
+    const { pickKeyVerse } = await import('./generate.js?v=' + Date.now());
+    const msg = (d.byAge && d.byAge.adult && d.byAge.adult.meditation || '').replace(/<[^>]+>/g, ' ');
+    const pick = await pickKeyVerse(d.scripture_ref, d.passage, d.title_ko || d.title_en, msg);
+    d.key_verse_ref = pick.ref; d.key_verse_ko = pick.ko;
+    await setDoc(doc(db, 'devotions', dk), { key_verse_ref: pick.ref, key_verse_ko: pick.ko }, { merge: true });
+  } catch (e) { console.warn('[핵심 구절 보정 실패]', e); }
 }
 
 function showDevoView(mode) {

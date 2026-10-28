@@ -195,7 +195,7 @@ function parseOdbHtml(post, odbDate) {
     if (anchors.length) key_verse_ref = cleanRef(stripTags(anchors[anchors.length - 1][1]));
     key_verse = stripTags(vb[1].replace(/<a[^>]*>[^<]*<\/a>/g, ''));
   }
-  if (!key_verse) errs.push('verse-box(핵심 구절) 못 찾음');
+  // 2026-10-27부터 ODB 캐나다가 verse-box를 비워서 올림 → 오류로 보지 않고, 나중에 본문에서 한 절을 고른다
 
   // 본문
   let message_body = '';
@@ -315,6 +315,32 @@ async function fetchOdbDevotion(targetKoreaDate) {
   );
 }
 
+// ── 핵심 구절 고르기 (ODB verse-box가 비었을 때) ──
+// passage: { book_ko, verses:[{num,text}] } (개역개정). 고른 절은 반드시 본문 안에서.
+export async function pickKeyVerse(scripture_ref, passage, title, body) {
+  const verses = passage.verses;
+  const list = verses.map(v => `${v.num}: ${v.text}`).join('\n');
+  const prompt = `오늘 묵상의 핵심 구절을 아래 본문에서 딱 한 절 고르세요.
+묵상 제목: ${title || ''}
+묵상 내용 요약용 원문: ${(body || '').slice(0, 1500)}
+
+본문 ${scripture_ref} (개역개정):
+${list}
+
+기준: 묵상 메시지를 가장 잘 담고, 아이들이 따라 쓰기 좋은 한 절.
+절 번호 숫자만 출력하세요. 다른 말 금지.`;
+  let num = '';
+  try {
+    const text = await callClaude([{ role:'user', content: prompt }], { maxTokens: 10 });
+    num = ((text || '').match(/\d+/) || [])[0] || '';
+  } catch(e) { console.warn('[pickKeyVerse 호출 실패]', e); }
+  let v = verses.find(x => x.num === num);
+  if (!v) v = verses[verses.length - 1];   // 실패하면 본문 마지막 절
+  const chapter = ((scripture_ref || '').match(/(\d+):/) || [])[1] || '';
+  const book = (scripture_ref || '').replace(/\s*\d+:.*$/, '').trim();
+  return { ref: `${book} ${chapter}:${v.num}`, ko: v.text };
+}
+
 // ── 연령별 3버전 묵상 한 번에 생성 ──
 async function generateByAge(devo, kvKo) {
   const prompt = `아래 Our Daily Bread 묵상을 우리 가족을 위한 한국어 묵상으로 변환합니다.
@@ -395,6 +421,13 @@ export async function generateTodayDevotion(ctx) {
     let passage = null, kvKo = '';
     try { passage = await fetchBiblePassage(devo.scripture_ref); } catch(e) { passage = null; }
     try { kvKo = await keyVerseKo(devo.key_verse_ref); } catch(e) { kvKo = ''; }
+    if (!kvKo && passage) {
+      // ODB가 핵심 구절을 안 줬을 때: 본문 중 한 절을 Claude가 고름
+      try {
+        const pick = await pickKeyVerse(devo.scripture_ref, passage, devo.title, devo.message_body);
+        devo.key_verse_ref = pick.ref; kvKo = pick.ko;
+      } catch(e) { console.warn('[핵심 구절 고르기 실패]', e); }
+    }
     setStep('1','done', passage ? `${passage.book_ko} ${passage.verses.length}절` : '본문 범위 확인');
 
     // 3. 연령별 생성
