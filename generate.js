@@ -111,12 +111,18 @@ async function callClaude(messages, options = {}) {
 
 function parseJSON(text) {
   let clean = text.trim().replace(/^```json\s*/i,'').replace(/```\s*$/i,'').replace(/^```\s*/i,'').trim();
-  const fb = clean.search(/[{\[]/);
-  if (fb === -1) throw new Error('JSON 시작 문자 없음');
-  const closeChar = clean[fb] === '[' ? ']' : '}';
-  clean = clean.slice(fb, clean.lastIndexOf(closeChar) + 1);
-  clean = clean.replace(/"((?:[^"\\]|\\.)*)"/g, (mt, inner) => '"' + inner.replace(/\r?\n/g, '\\n') + '"');
-  return JSON.parse(clean);
+  const fix = t => t.replace(/"((?:[^"\\]|\\.)*)"/g, (mt, inner) => '"' + inner.replace(/\r?\n/g, '\\n') + '"');
+  // 모델이 JSON 앞에 설명 문장을 붙이는 경우가 있음 → '{"' 로 시작하는 지점을 차례로 시도
+  const starts = [...clean.matchAll(/[{\[]\s*["{\[]/g)].map(m => m.index);
+  if (!starts.length) { const fb = clean.search(/[{\[]/); if (fb !== -1) starts.push(fb); }
+  if (!starts.length) throw new Error('JSON 시작 문자 없음');
+  let lastErr;
+  for (const fb of starts) {
+    const closeChar = clean[fb] === '[' ? ']' : '}';
+    try { return JSON.parse(fix(clean.slice(fb, clean.lastIndexOf(closeChar) + 1))); }
+    catch (e) { lastErr = e; }
+  }
+  throw lastErr;
 }
 
 // ════════════════════════════════════════════════════
@@ -185,6 +191,12 @@ function parseOdbHtml(post, odbDate) {
     const a = pb[1].match(/<a[^>]*>([^<]+)<\/a>/);
     if (a) scripture_ref = cleanRef(stripTags(a[1]));
   }
+  if (!scripture_ref) {
+    // 느슨한 추출: 'Read:' 다음 첫 링크, 또는 biblegateway 링크
+    const m = html.match(/Read:\s*(?:<[^>]+>\s*)*([^<|]+?)\s*(?:<\/a>|\|)/i)
+           || html.match(/<a[^>]*biblegateway[^>]*>([^<]+)<\/a>/i);
+    if (m) scripture_ref = cleanRef(stripTags(m[1]));
+  }
   if (!scripture_ref) errs.push('passage-box(본문 범위) 못 찾음');
 
   // 핵심 구절 + 출처
@@ -202,6 +214,12 @@ function parseOdbHtml(post, odbDate) {
   const pc = html.match(/class="post-content"[^>]*>([\s\S]*?)<\/div>/);
   if (pc) {
     const paras = [...pc[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)].map(m => stripTags(m[1])).filter(Boolean);
+    message_body = paras.join(' ');
+  }
+  if (!message_body) {
+    // 느슨한 추출: 전체 <p> 중 본문다운 문단(40자 이상, Read:/Bible in a Year 줄 제외)
+    const paras = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)].map(m => stripTags(m[1]))
+      .filter(t => t.length >= 40 && !/^Read:|Bible in a Year/i.test(t));
     message_body = paras.join(' ');
   }
   if (!message_body) errs.push('post-content(본문) 못 찾음');
@@ -232,12 +250,22 @@ async function fetchOdbDirect(odbDate) {
   const posts = await r.json();
   if (!Array.isArray(posts)) throw new Error('응답이 배열이 아님');
   if (!posts.length) throw new Error('해당 기간 글 0개');
-  const post = posts.find(p => (p.date || '').slice(0, 10) === targetYmd);
-  if (!post) {
+  const sameDay = posts.filter(p => (p.date || '').slice(0, 10) === targetYmd);
+  if (!sameDay.length) {
     const dates = posts.map(p => (p.date || '').slice(0, 10)).join(', ');
     throw new Error(`${targetYmd} 글 없음 (받은 날짜: ${dates})`);
   }
-  return parseOdbHtml(post, odbDate);
+  // 같은 날짜에 공지 등 다른 글이 섞여 있을 수 있음 → 묵상 구조(passage-box)가 있는 글 우선
+  sameDay.sort((a, b) => {
+    const score = p => /passage-box/.test((p.content && p.content.rendered) || '') ? 0 : 1;
+    return score(a) - score(b);
+  });
+  const errs = [];
+  for (const post of sameDay) {
+    try { return parseOdbHtml(post, odbDate); }
+    catch (e) { errs.push(`「${stripTags((post.title && post.title.rendered) || '')}」 ${e.message}`); }
+  }
+  throw new Error(errs.join(' / '));
 }
 
 // ════════════════════════════════════════════════════
